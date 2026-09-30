@@ -89,3 +89,22 @@ This runs before saving to cart. When the user tries to add a 4th unit of a dish
 
 **Time:** roughly 45 minutes
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## CC-01 — "The search suggestions are behind everything"
+
+**Reproduced:** Typed "fre" in the search box. The suggestion "French Fries | Snacks" appeared but was hidden behind the `.cat-tabs` category bar. Only the topmost sliver was ever visible; clicking items below it did nothing.
+
+**Cause:** A **CSS stacking context** problem — not just a z-index number problem.
+
+When an element has both `position` and `z-index` set, it creates a **stacking context**. Children's z-index values are only meaningful *within* that context. So even though `positionSuggestions()` set `z-index: 200` on `#suggestBox` via JS, that 200 only competed against siblings *inside* `.filters` — not against the `.filters` context itself (z-index: 40) vs `.site-header` (z-index: 50).
+
+The `.cat-tabs` is also a child of `.filters`, but comes later in the DOM and is itself a `position: sticky; z-index: 40` element. Because both suggest-box and cat-tabs are evaluated within the same `.filters` stacking context, DOM order caused cat-tabs to paint over the suggestions.
+
+**Fix:** Moved `#suggestBox` from inside `.search-wrap` to a **direct child of `<body>`** in `frontend/index.html`. At body level it is in the root stacking context, where its `z-index: 200` (set by `positionSuggestions()` in `menu.js`) is compared against top-level elements and beats everything (.filters z-index:40, .cat-tabs z-index:40, .site-header z-index:50).
+
+**Checked:** Typing in the search box now shows the full suggestion list above the category bar, header, and all other sticky elements. Clicking suggestions works across the full dropdown.
+
+**Time:** roughly 1.25 hour
+
+
