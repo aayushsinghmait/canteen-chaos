@@ -214,7 +214,13 @@ async function cancelOrder(token, button) {
     stopTracking();
     closeModal('orderModal');
     loadMyOrders();
-    if (state.route === 'menu') loadMenu();
+    // CC-07 fix: always reload the menu after cancellation regardless of current route.
+    // releaseStock() restores stock on the server immediately, but the menu page
+    // would still show "Sold out" because it was only refreshed when route === 'menu'.
+    // Cancelling from My Orders (route === 'orders') meant the menu was never updated.
+    // Clear API cache first so the fresh stock value is actually fetched.
+    api.clearCache();
+    loadMenu();
   } catch (err) {
     toast(err.message, 'bad');
     if (button) button.disabled = false;
