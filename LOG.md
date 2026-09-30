@@ -14,3 +14,22 @@
 
 
 **Time:** roughly 45 minutes
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## CC-04 — "The buttons don't work on my tablet"
+
+**Reproduced:** On tablet-sized screens (761px - 900px), Add to Cart and favourite (star) buttons appeared normal but clicks did nothing.
+![Frontpage](https://drive.google.com/file/d/1_fDqCF1Q_9o_xU494oYx0cOHc2FpH7xO/view?usp=drive_link)
+
+**Cause:** : A media query at `frontend/style.css:1032-1047` added `::after` pseudo-elements to `.dish-card` (covering bottom 58px with z-index: 3) and `.img-wrap` (covering top-right 52x52px with z-index: 1). These invisible overlays sat above the buttons, intercepting clicks.
+
+**Fix:** :  Added `pointer-events: none` to both pseudo-elements in the tablet media query. This allows clicks to pass through to the actual buttons underneath.
+
+**Checked:** :  Buttons work on tablet viewport. Visual appearance unchanged (overlays still show for blocked cards).
+![frontpage-after-click](https://drive.google.com/file/d/1ai9sNEiIpQmyhY7UZ9HQmxm7x2r0aD_L/view?usp=drive_link)
+
+
+**Time:** roughly 1 hour
+
+
