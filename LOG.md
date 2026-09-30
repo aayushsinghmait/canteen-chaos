@@ -239,3 +239,47 @@ Switching to `repeat(2, 1fr)` gives two equal columns that share the available w
 
 
 I DO A CHANGE ALSO THAT I CHANGE SIZE OF MENU CARD FOR PHONE SO NOW VISIBLE 2 AT A ROW.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+## Extra credit
+
+Anything not on the bug log: a problem you found yourself, a test you
+wrote, or a fix you are unsure about. Same format, plus one line on how
+you noticed it.
+
+
+
+## FIND_BUG 01 "ORDER NOT SHOWN IN MY ORDERS."
+
+**HOW YOU FIND:** After placing an order (token CC-2218 was confirmed on screen), navigating to the **My Orders** page showed "No orders found" — even though the debug message said "This browser has 13 saved order token(s)." The order existed on the server (trackable by token) but the list endpoint returned nothing for this device. This mismatch between the confirmed order and the empty list pointed directly at the `GET /api/orders?memberId=...` query being broken.
+
+**Cause:** A copy-paste typo in `backend/routes/orders.routes.js` line 187. The `GET /api/orders` handler correctly checked `req.query.memberId` to decide whether to filter, but then compared each order against `req.query.userId` — a field that does not exist in the query string and is always `undefined`:
+
+```js
+// BUGGY — userId is never in the query, so every order fails the comparison
+if (req.query.memberId) orders = orders.filter((o) => o.memberId === req.query.userId);
+```
+
+Because `req.query.userId` is always `undefined`, no order ever matched and the API returned an empty list for every student, even if they had placed 13 orders.
+
+**Fix:** Changed `req.query.userId` to `req.query.memberId` so the filter reads the correct query parameter:
+
+```js
+// FIXED — now correctly compares against the memberId sent by the browser
+if (req.query.memberId) orders = orders.filter((o) => o.memberId === req.query.memberId);
+```
+
+**Checked:** After restarting the backend, navigating to My Orders correctly showed all orders placed by this device (CC-2218 and previous orders). Tracking, cancelling, and rating from the list all work as expected. The staff Counter view (which does not pass `memberId`) is unaffected.
+
+**Time:** roughly 15 minutes
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
