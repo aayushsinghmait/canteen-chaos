@@ -284,6 +284,7 @@ const runSuggest = debounce(async () => {
         .join('')
     );
 
+    positionSuggestions();
     suggestIndex = -1;
     show(suggestBox, true);
   } catch (e) {
@@ -291,11 +292,32 @@ const runSuggest = debounce(async () => {
   }
 }, 180);
 
+function positionSuggestions() {
+  const rect = searchInput.getBoundingClientRect();
+  suggestBox.style.position = 'fixed';
+  suggestBox.style.top = `${rect.bottom + 4}px`;
+  suggestBox.style.left = `${rect.left}px`;
+  suggestBox.style.width = `${rect.width}px`;
+  suggestBox.style.zIndex = '200';
+}
+
 function hideSuggestions() {
   show(suggestBox, false);
   suggestBox.innerHTML = '';
   suggestIndex = -1;
+  suggestBox.style.position = '';
+  suggestBox.style.top = '';
+  suggestBox.style.left = '';
+  suggestBox.style.width = '';
+  suggestBox.style.zIndex = '';
 }
+
+window.addEventListener('scroll', () => {
+  if (!suggestBox.hidden) positionSuggestions();
+}, { passive: true });
+window.addEventListener('resize', () => {
+  if (!suggestBox.hidden) positionSuggestions();
+});
 
 searchInput.addEventListener('input', () => {
   runSearch();
