@@ -32,4 +32,19 @@
 
 **Time:** roughly 1 hour
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## CC-09 — "The menu shows more dishes than it should"
+
+**Reproduced:** : Menu page loaded all dishes at once instead of paginated batches of 5. "Load more" button appeared but all dishes were already visible.
+
+**Cause:** : `backend/logic/search.js:101` `paginate()` returned `items: list` (full array) instead of `items: items` (paginated slice).
+
+**Fix:**: Changed return value from `items: list` to `items` (shorthand for `items: items`).
+
+**Checked:** : Initial load shows 5 dishes. "Load more" fetches next 5. Infinite scroll works. Total count correct.
+
+**Time:** roughly 30 minutes
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
