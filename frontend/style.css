@@ -1287,7 +1287,11 @@ h3 {
 
 @media (max-width: 480px) {
   .view {
-    overflow-x: hidden;
+    /* CC-05 fix: overflow-x:hidden creates a scroll container that breaks
+       position:sticky on .filters and .cat-tabs inside it on mobile.
+       overflow-x:clip achieves the same horizontal clipping without
+       establishing a new scroll container, so sticky still works. */
+    overflow-x: clip;
   }
 
   .nav-toggle {
