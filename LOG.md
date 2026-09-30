@@ -140,4 +140,19 @@ Removed the `if (state.route === 'menu')` guard. `loadMenu()` is always safe to 
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+## CC-08 — "An old coupon still works"
+
+**Reproduced:** Used expired coupon "FRESHERS24" (expiresAt: 2024-09-30) and got discount applied.
+
+**Cause:** `backend/logic/pricing.js` `applyCoupon()` validated `usesLeft`, `minOrder`, `vegOnly`, and `slots` but did not check the `expiresAt` field against current time.
+
+**Fix:** Added expiration check in `applyCoupon()`: `if (coupon.expiresAt && new Date(coupon.expiresAt) <= now) return { valid: false, discount: 0, reason: 'This coupon has expired' };`
+
+**Checked:** Expired coupons rejected with "This coupon has expired". Valid coupons still work.
+
+**Time:** roughly 10 minutes
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
