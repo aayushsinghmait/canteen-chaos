@@ -76,6 +76,7 @@ function suggest(menu, query, limit = 6) {
 }
 
 const SORTERS = {
+  /** DEBUG CC-10 */
   'price-asc': (a, b) => a.price - b.price,
   'price-desc': (a, b) => b.price - a.price,
   'rating-desc': (a, b) => b.rating - a.rating,
