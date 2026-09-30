@@ -155,4 +155,66 @@ Removed the `if (state.route === 'menu')` guard. `loadMenu()` is always safe to 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+## CC-05 — "The category bar scrolls away on my phone"
+
+**Reproduced:** On mobile (iPhone-sized viewport), scrolling down the menu causes both the filter bar (search / sort / chips / price) and the category tab bar to completely scroll off the top of the screen. On desktop they worked, but on mobile neither bar stayed pinned.
+
+---
+
+### Stage 1 — Wrong `top` values on desktop
+
+**Cause:** Two incorrect `top` values in `frontend/style.css`:
+
+1. `.filters` had `position: sticky; top: 0` — same `top` as the site-header (`top: 0; z-index: 50`), so it slid *under* the header on scroll instead of sitting below it.
+
+2. `.cat-tabs` had `position: sticky; top: 62px` — only accounted for the nav bar height (62 px) but ignored the orange slot-bar (~29 px) rendered below the nav.
+
+**Fix (style.css):**
+- Added CSS variables to `:root`:
+  ```css
+  --header-h: 91px;   /* 62px nav + 29px slot-bar */
+  --filters-h: 58px;  /* search/sort/chips row */
+  ```
+- `.filters`: `top: 0` → `top: var(--header-h)`
+- `.cat-tabs`: `top: 62px` → `top: calc(var(--header-h) + var(--filters-h))`
+
+---
+
+### Stage 2 — Hardcoded heights broke on mobile
+
+**Cause:** On mobile (`≤480px`) the filter bar wraps to **three rows** (search full-width, sort + chips, price slider full-width), making the real `.filters` height ~150–160 px — far taller than the hardcoded `--filters-h: 58px`. The category tab bar stuck too early and overlapped the filter rows still on screen.
+
+**Fix (js/app.js):** Added `setStickyOffsets()` which measures the real element heights at runtime using `offsetHeight` and writes them as CSS custom properties:
+```js
+root.style.setProperty('--header-h', header.offsetHeight + 'px');
+root.style.setProperty('--filters-h', filtersInner.offsetHeight + paddingTop + 'px');
+```
+Called in `boot()` after `renderSlotBar()` (slot-bar text can affect header height), and on `window resize` so it re-measures after orientation changes or layout reflows.
+
+---
+
+### Stage 3 — Real root cause on mobile: `overflow-x: hidden` silently breaks sticky
+
+**Cause (actual mobile bug):** The `@media (max-width: 480px)` block contained:
+```css
+.view { overflow-x: hidden; }
+```
+`overflow-x: hidden` (like `auto` or `scroll`) creates a **new scroll container** on `.view`. CSS `position: sticky` elements only stick relative to their nearest scrolling ancestor — so `.filters` and `.cat-tabs` were now trying to stick inside `.view`, which does not scroll (the page does). Result: they scrolled away with the rest of the content as if sticky was never set.
+
+**Fix (style.css):**
+```css
+/* before */
+.view { overflow-x: hidden; }
+
+/* after */
+.view { overflow-x: clip; }
+```
+`overflow-x: clip` produces **identical visual clipping** (no horizontal scroll) but does **not** create a scroll container. Sticky positioning therefore works correctly — both bars stay pinned on screen while scrolling on any phone.
+
+---
+**Checked:** On a simulated iPhone 16 viewport, both the filter bar and category tab bar remain visible and pinned at the correct position below the header while scrolling through the full menu list.
+
+**Time:** roughly 2.5 hours
+
+
 
