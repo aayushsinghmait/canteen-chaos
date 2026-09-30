@@ -48,3 +48,16 @@
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+## CC-10 — "Sorting by price is backwards"
+
+**Reproduced:** Selected "Price: low to high" - most expensive dishes appeared first. "Price: high to low" showed cheapest first.
+
+**Cause:** `backend/logic/search.js:79-80` SORTERS had reversed comparators: `'price-asc': (a, b) => b.price - a.price` (descending) and `'price-desc': (a, b) => a.price - b.price` (ascending).
+
+**Fix:** Swapped the two comparator functions so `price-asc` sorts low-to-high and `price-desc` sorts high-to-low.
+
+**Checked:** All sort options work correctly. Price low-to-high shows cheapest first. High-to-low shows most expensive first.
+
+**Time:** roghly 25 minutes
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
