@@ -103,12 +103,40 @@ window.addEventListener('online', () => {
   loadMenu();
 });
 
+/* ------------------------------------------------- sticky offsets */
+
+/* CC-05: measure actual element heights and push them into CSS variables.
+   This runs on boot and on every resize so the filter bar and category
+   tab bar always stick at the right position on every screen size —
+   including mobile where the filter row wraps to multiple lines. */
+function setStickyOffsets() {
+  const header = document.querySelector('.site-header');
+  const filtersEl = document.querySelector('.filters');
+  const root = document.documentElement;
+
+  if (header) {
+    root.style.setProperty('--header-h', header.offsetHeight + 'px');
+  }
+  // CC-05 fix: .cat-tabs is now a sibling of .filters (not a child), so
+  // --filters-h must equal the full .filters height so cat-tabs sticks
+  // at exactly the right position below the filter bar on all screen sizes.
+  if (filtersEl) {
+    root.style.setProperty('--filters-h', filtersEl.offsetHeight + 'px');
+  }
+}
+
+// re-measure whenever the layout reflows (orientation change, resize, etc.)
+window.addEventListener('resize', setStickyOffsets);
+
 /* ------------------------------------------------------------ boot */
 
 async function boot() {
   applyTheme(preferredTheme());
   setText('#buildTag', document.documentElement.dataset.build || 'unknown');
   setText('#cartCount', cartCount());
+
+  // CC-05: initial measurement before the API responds (uses CSS fallback heights)
+  setStickyOffsets();
 
   try {
     const health = await api.health();
@@ -120,8 +148,11 @@ async function boot() {
 
     setText('#serverClock', clockString(health.serverTime));
     renderSlotBar();
+    // CC-05: re-measure after slot-bar text is set (may change header height)
+    setStickyOffsets();
   } catch (e) {
     setText('#slotBar', 'Cannot reach the canteen server.');
+    setStickyOffsets();
   }
 
   renderCartLines();
@@ -139,3 +170,4 @@ async function boot() {
 }
 
 boot();
+
