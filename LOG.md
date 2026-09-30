@@ -217,4 +217,25 @@ Called in `boot()` after `renderSlotBar()` (slot-bar text can affect header heig
 **Time:** roughly 2.5 hours
 
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+
+## CC-03 — "The menu is wider than my phone"
+
+**Reproduced:** Opened site on a phone (≤480px viewport, e.g. iPhone 16 at 393px). The menu grid overflowed horizontally — had to scroll sideways to see full cards, and the "Add to Cart" buttons on right-hand cards were cut off the screen edge.
+
+**Cause:** Two issues combined to cause the overflow:
+
+1. `frontend/style.css` inside the `@media (max-width: 480px)` block, `.menu-grid` was set to `grid-template-columns: 1fr` — a single column. While that sounds fine, the grid items (`.dish-card`) had no explicit `min-width` constraint.
+2. CSS grid items default to `min-width: auto`, which means the browser uses the item's content width as a minimum. When card content (e.g. long dish names, buttons) is wider than the column allows, the card expands beyond its `1fr` column, pushing the grid wider than the viewport.
+
+**Fix:** Two changes in `frontend/style.css` under `@media (max-width: 480px)`:
+
+Switching to `repeat(2, 1fr)` gives two equal columns that share the available width. Setting `min-width: 0` on `.dish-card` is the key fix — it allows grid children to shrink below their intrinsic content width, so they stay inside their column and never cause horizontal overflow.
+
+**Checked:** On a 393px-wide phone viewport, the menu shows two equal-width columns with no horizontal scrolling. All "Add to Cart" buttons are fully visible. On laptop (>760px) layout is unchanged.
+
+**Time:** roughly 20 minutes
+
+
+I DO A CHANGE ALSO THAT I CHANGE SIZE OF MENU CARD FOR PHONE SO NOW VISIBLE 2 AT A ROW.
