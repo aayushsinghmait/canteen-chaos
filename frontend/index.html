@@ -48,7 +48,7 @@
                placeholder="Search dishes, categories, tags...   (press /)"
                aria-label="Search dishes" role="combobox" aria-expanded="false"
                aria-controls="suggestBox" />
-        <div class="suggest-box" id="suggestBox" role="listbox" hidden></div>
+        <!-- suggestBox moved to body level to escape .filters stacking context (CC-01) -->
       </div>
 
       <select id="sortSelect" class="select" aria-label="Sort dishes">
@@ -278,6 +278,10 @@
   <div id="ratingBody"></div>
   <button class="primary-btn" id="submitRatingBtn">Submit</button>
 </div>
+
+<!-- CC-01 fix: suggest-box is a direct child of body so z-index:200 is evaluated
+     in the root stacking context and beats .filters (z-index:40) and .cat-tabs -->
+<div class="suggest-box" id="suggestBox" role="listbox" hidden></div>
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
