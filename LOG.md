@@ -107,4 +107,37 @@ The `.cat-tabs` is also a child of `.filters`, but comes later in the DOM and is
 
 **Time:** roughly 1.25 hour
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## CC-07 — "Cancelling makes it worse"
+
+**Reproduced:** Ordered Veg Momos x2 (the last 2 in stock). Cancelled from the **My Orders** page (CC-8718 → Cancel). Counter dashboard confirmed the order was cancelled. But the Menu page still showed Veg Momos as **"Sold out"** — stock never appeared to come back.
+
+**Cause:** The backend `releaseStock()` in `validation.js` was correct (`dish.stock + line.qty`) and did restore stock to disk properly. The problem was in **`frontend/js/orders.js`** `cancelOrder()`:
+
+```js
+// BEFORE (buggy):
+if (state.route === 'menu') loadMenu();
+```
+
+This only reloaded the menu if the user was *already on the menu page* when cancelling. When the user cancelled from the **My Orders page** (`state.route === 'orders'`), `loadMenu()` was never called. Later when navigating to the Menu, the menu fetched fresh data — but the API `clearCache()` was not called, and even without cache, the menu re-fetch correctly returned stock=2 from the server. The visible symptom was that the dish still showed "Sold out" while the user remained on My Orders, and only refreshed once they went back to Menu.
+
+The core issue: **`loadMenu()` was gated behind a route check** that excluded the most common cancellation flow (from My Orders).
+
+**Fix:** In `frontend/js/orders.js` `cancelOrder()`:
+```js
+// AFTER (correct):
+api.clearCache();   // drop any stale API cache entries
+loadMenu();         // always reload menu so stock shows correctly everywhere
+```
+
+Removed the `if (state.route === 'menu')` guard. `loadMenu()` is always safe to call — it runs in the background and updates `state.dishes`, which the menu grid reads. Added `api.clearCache()` beforehand to ensure no stale cache entry for `/menu` is served.
+
+**Checked:** Ordered Veg Momos x2 → cancelled from My Orders page → Menu immediately shows "Only 2 left" badge instead of "Sold out". Counter stock panel correctly shows stock restored.
+
+**Time:** roughly 40 minutes
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
