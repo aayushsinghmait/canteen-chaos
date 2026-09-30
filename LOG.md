@@ -61,3 +61,31 @@
 **Time:** roghly 25 minutes
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## CC-06 — "I ordered more than they had"
+
+**Reproduced:** Dal Tadka Thali shows "Only 3 left" badge. Clicking `+` on the menu card still allows adding up to 10. Cart shows qty=10, and the order goes through — but kitchen only had 3.
+
+
+**Cause:** `frontend/js/state.js` `setQty()` (line 97) only checked quantity against `MAX_PER_DISH` (10):
+```js
+if (next > MAX_PER_DISH) return { ok: false, ... reason: `Max 10 of one dish` };
+```
+There was **no check against `dish.stock`**. The `dish` object (which includes `.stock`) is passed into `setQty`, but its stock was never used as a cap. So a dish with stock=3 let you add up to 10 to the cart, giving a false impression the order was valid.
+
+
+**Fix:** Added a stock guard in `setQty()` in `frontend/js/state.js` (lines 99-102):
+```js
+const stock = Number(dish.stock);
+if (!Number.isNaN(stock) && next > stock) {
+  return { ok: false, qty: cartQty(id), reason: `Only ${stock} ${dish.name} available` };
+}
+```
+This runs before saving to cart. When the user tries to add a 4th unit of a dish with stock=3, they get a toast: **"Only 3 Dal Tadka Thali available"** and the cart stays at 3.
+
+
+**Checked:** Pressing `+` on Dal Tadka Thali (stock=3) stops at 3 and shows correct warning toast. `MAX_PER_DISH` cap still applies for unlimited-stock items.
+
+
+**Time:** roughly 45 minutes
+
