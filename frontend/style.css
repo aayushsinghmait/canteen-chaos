@@ -1328,12 +1328,19 @@ h3 {
     margin-top: 8px;
   }
 
+  /* CC-03 fix: 2 equal columns; min-width:0 stops grid children from
+     overflowing their column (default min-width:auto causes the cut-off) */
   .menu-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .dish-card {
+    min-width: 0;
   }
 
   .dish-card img {
-    height: 190px;
+    height: 130px;
   }
 
   .cart-panel {
